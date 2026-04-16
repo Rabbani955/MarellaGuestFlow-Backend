@@ -8,4 +8,4 @@ RUN chmod +x mvnw
 
 RUN ./mvnw clean package -DskipTests
 
-CMD ["java", "-jar", "target/MarellaGuestFlowApplication.jar"]
+CMD ["sh", "-c", "java -jar target/*.jar"]
