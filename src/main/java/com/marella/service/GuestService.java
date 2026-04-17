@@ -80,9 +80,8 @@ public class GuestService {
         				"If you enjoyed your stay, we would truly appreciate a 5⭐ rating from you 🙏\n" +
         				"Your feedback helps us improve and serve you better.\n\n" +
 
-        				"✨ We look forward to welcoming you again!\n" +
-        				"Warm regards,\n" +
-        				"Marella Royal Inn Team";
+        				"✨ We look forward to welcoming you again!\n" ;
+        				
 
         whatsappService.sendMessage(existing.getPhone(), message);
 
