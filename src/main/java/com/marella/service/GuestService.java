@@ -38,7 +38,7 @@ public class GuestService {
                 "We are delighted to have you with us 😊\n\n" +
 
                 "📶 WiFi Details\n" +
-                "Network: Marella_Floor\n" +
+                "Network: Marella_Floor_Name\n" +
                 "Password: 7795951743\n\n" +
 
                 "🛏 Room No: " + guest.getRoomNumber() + "\n" +
