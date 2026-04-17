@@ -66,18 +66,23 @@ public class GuestService {
 
         // ✅ Custom WhatsApp Message
         String message =
-                "🏨 Hotel Marella Royal Inn\n" +
-                "📞 Reception: 7795951743\n\n" +
+        		"🏨 Hotel Marella Royal Inn\n" +
+        				"📞 Reception: 7795951743\n\n" +
 
-                "Dear " + existing.getName() + ",\n\n" +
+        				"Dear " + existing.getName() + ",\n\n" +
 
-                "Thank you for staying with us 🙏\n" +
-                "We hope you had a comfortable stay 😊\n\n" +
+        				"Thank you for choosing Marella Royal Inn 🙏\n" +
+        				"We hope you had a pleasant and comfortable stay with us 😊\n\n" +
 
-                "⭐ Please share your feedback:\n" +
-                "https://maps.app.goo.gl/JEjAzA1rA3rFhEwB8\n\n" +
+        				"⭐ We would love to hear your feedback:\n" +
+        				"https://maps.app.goo.gl/GydQ1ogJ28W9V3Hr8\n\n" +
 
-                "✨ Thank you for choosing Marella Royal Inn!";
+        				"If you enjoyed your stay, we would truly appreciate a 5⭐ rating from you 🙏\n" +
+        				"Your feedback helps us improve and serve you better.\n\n" +
+
+        				"✨ We look forward to welcoming you again!\n" +
+        				"Warm regards,\n" +
+        				"Marella Royal Inn Team";
 
         whatsappService.sendMessage(existing.getPhone(), message);
 
