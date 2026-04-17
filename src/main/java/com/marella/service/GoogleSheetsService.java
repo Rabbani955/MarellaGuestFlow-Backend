@@ -23,14 +23,19 @@ public class GoogleSheetsService {
 
     private Sheets getSheetsService() throws Exception {
 
-        InputStream in = getClass().getResourceAsStream("/credentials.json");
+    	String json = System.getenv("GOOGLE_CREDENTIALS_JSON");
 
-        if (in == null) {
-            throw new RuntimeException("❌ credentials.json file NOT FOUND in resources folder");
-        }
+    	if (json == null) {
+    	    throw new RuntimeException("❌ GOOGLE_CREDENTIALS_JSON not set");
+    	}
 
-        GoogleCredential credential = GoogleCredential.fromStream(in)
-                .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
+    	// 🔥 THIS LINE IS CRITICAL
+    	json = json.replace("\\n", "\n");
+
+    	InputStream in = new java.io.ByteArrayInputStream(json.getBytes());
+
+    	GoogleCredential credential = GoogleCredential.fromStream(in)
+    	        .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
 
         return new Sheets.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
