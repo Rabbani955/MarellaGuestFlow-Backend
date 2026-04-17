@@ -1,9 +1,12 @@
 package com.marella.controller;
 
 import com.marella.model.Guest;
+
 import com.marella.service.GuestService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -16,13 +19,20 @@ public class GuestController {
     private GuestService guestService;
 
     @PostMapping("/checkin")
-    public String checkIn(@RequestBody Guest guest) {
-        return guestService.checkInGuest(guest);
+    public ResponseEntity<String> checkIn(@Valid @RequestBody Guest guest) {
+
+        String result = guestService.checkInGuest(guest);
+
+        if (result.contains("❌")) {
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/checkout")
-    public String checkOut(@RequestBody Guest guest) {
-        return guestService.checkOutGuest(guest);
+    public ResponseEntity<String> checkOut(@RequestBody Guest guest){
+        return ResponseEntity.ok(guestService.checkOutGuest(guest));
     }
 
     @GetMapping("/guests")
@@ -31,15 +41,15 @@ public class GuestController {
     }
 
     
-    @GetMapping("/guest-by-room/{room}")
-    public Guest getByRoom(@PathVariable String room) {
+    @GetMapping("/guests/room/{room}")
+    public ResponseEntity<Guest> getByRoom(@PathVariable String room) {
 
         Guest g = guestService.findByRoom(room);
 
         if (g == null) {
-            return null; // or throw exception later
+            return ResponseEntity.notFound().build();
         }
 
-        return g;
+        return ResponseEntity.ok(g);
     }
 }

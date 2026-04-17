@@ -1,17 +1,27 @@
 package com.marella.model;
+import jakarta.validation.constraints.*;
 
 public class Guest {
 
+	@NotBlank(message = "Name is required")
     private String name;
+	
+	@NotBlank(message = "Phone is required")
     private String phone;
+	
+	@NotBlank(message = "Room number is required")
     private String roomNumber;
+	
     private String checkInTime;
     private String checkOutTime;
    
 
 	private String status;
+	@NotBlank(message = "Guest count required")
     private String guests;
+	@NotBlank(message = "Booking type required")
     private String bookingType;
+	 @Positive(message = "Amount must be positive")
     private double amount;
 
     // ✅ Getters & Setters

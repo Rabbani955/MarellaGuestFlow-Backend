@@ -1,11 +1,14 @@
 package com.marella.service;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.marella.model.Guest;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -15,11 +18,16 @@ import java.util.*;
 public class GoogleSheetsService {
 
     private static final String APPLICATION_NAME = "MarellaGuestFlow";
-    private static final String SPREADSHEET_ID = "1A-xFvS_xphZMi0ewj6OJ__8YlBdXTSLEEuBr6CSiyPk";
+    @Value("${spreadsheet.id}")
+    private String SPREADSHEET_ID;
 
     private Sheets getSheetsService() throws Exception {
 
         InputStream in = getClass().getResourceAsStream("/credentials.json");
+
+        if (in == null) {
+            throw new RuntimeException("❌ credentials.json file NOT FOUND in resources folder");
+        }
 
         GoogleCredential credential = GoogleCredential.fromStream(in)
                 .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
@@ -41,6 +49,8 @@ public class GoogleSheetsService {
         try {
             Sheets service = getSheetsService();
 
+            System.out.println("💰 Amount received: " + guest.getAmount());
+
             List<Object> row = Arrays.asList(
                     getSafe(guest.getName()),        // A
                     getSafe(guest.getPhone()),       // B
@@ -49,17 +59,18 @@ public class GoogleSheetsService {
                     getSafe(guest.getGuests()),      // E
                     getSafe(guest.getBookingType()), // F
                     "",                              // G (Checkout)
-                    getSafe(guest.getStatus())       // H
+                    getSafe(guest.getStatus()),      // H
+                    getSafe(guest.getAmount())       // I ✅ IMPORTANT
             );
 
             ValueRange body = new ValueRange().setValues(List.of(row));
 
             service.spreadsheets().values()
-                    .append(SPREADSHEET_ID, "Sheet1!A1", body)
+                    .append(SPREADSHEET_ID, "Sheet1!A1:I", body) // ✅ IMPORTANT
                     .setValueInputOption("RAW")
                     .execute();
 
-            System.out.println("✅ Saved correctly");
+            System.out.println("✅ Saved with amount");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -72,14 +83,14 @@ public class GoogleSheetsService {
             Sheets service = getSheetsService();
 
             ValueRange response = service.spreadsheets().values()
-                    .get(SPREADSHEET_ID, "Sheet1!A2:H")
+                    .get(SPREADSHEET_ID, "Sheet1!A2:I")
                     .execute();
 
             List<List<Object>> rows = response.getValues();
 
             if (rows == null) return;
 
-            for (int i = 0; i < rows.size(); i++) {
+            for (int i = rows.size() - 1; i >= 0; i--) {
 
                 List<Object> row = rows.get(i);
 
@@ -88,7 +99,9 @@ public class GoogleSheetsService {
                     String room = getSafe(row.get(2));
                     String status = getSafe(row.get(7));
 
-                    if (room.equals(guest.getRoomNumber()) && status.equals("Checked-In")) {
+                    String cleanStatus = status == null ? "" : status.trim().toLowerCase();
+
+                    if (room.equals(guest.getRoomNumber()) && cleanStatus.equals("checked-in")) {
 
                         int rowNum = i + 2;
 
@@ -125,7 +138,7 @@ public class GoogleSheetsService {
             Sheets service = getSheetsService();
 
             ValueRange res = service.spreadsheets().values()
-                    .get(SPREADSHEET_ID, "Sheet1!A2:H")
+                    .get(SPREADSHEET_ID, "Sheet1!A2:I")
                     .execute();
 
             return res.getValues();
@@ -137,16 +150,33 @@ public class GoogleSheetsService {
 
     // ✅ CHECK ROOM OCCUPANCY
     public boolean isRoomOccupied(String room) {
+    	
         try {
             List<List<Object>> rows = getAllGuests();
 
-            if (rows == null) return false;
+            if (rows == null || rows.isEmpty()) return false;
 
-            for (List<Object> r : rows) {
+            // 🔥 Reverse loop → check latest entry first
+            for (int i = rows.size() - 1; i >= 0; i--) {
+
+                List<Object> r = rows.get(i);
+
                 if (r.size() >= 8) {
-                    if (getSafe(r.get(2)).equals(room) &&
-                        getSafe(r.get(7)).equals("Checked-In")) {
-                        return true;
+
+                    String roomNo = getSafe(r.get(2));
+                    String status = getSafe(r.get(7));
+
+                    // Skip invalid rows
+                    if (roomNo.isEmpty()) continue;
+
+                    System.out.println("ROOM: [" + roomNo + "]");
+                    System.out.println("STATUS: [" + status + "]");
+
+                    if (roomNo.equalsIgnoreCase(room.trim())) {
+
+                        String cleanStatus = status == null ? "" : status.trim().toLowerCase();
+
+                        return cleanStatus.equals("checked-in");
                     }
                 }
             }
@@ -157,16 +187,19 @@ public class GoogleSheetsService {
 
         return false;
     }
-
+    
     // ✅ FIND GUEST BY ROOM
     public Guest findGuestByRoom(String room) {
         try {
 
             List<List<Object>> rows = getAllGuests();
 
-            if (rows == null) return null;
+            if (rows == null || rows.isEmpty()) return null;
 
-            for (List<Object> r : rows) {
+            // 🔥 Reverse loop
+            for (int i = rows.size() - 1; i >= 0; i--) {
+
+                List<Object> r = rows.get(i);
 
                 if (r.size() >= 8) {
 
@@ -175,14 +208,19 @@ public class GoogleSheetsService {
                     String roomNo = getSafe(r.get(2));
                     String status = getSafe(r.get(7));
 
-                    if (roomNo.equals(room.trim()) && status.equalsIgnoreCase("Checked-In")) {
+                    if (roomNo.equalsIgnoreCase(room.trim())) {
 
-                        Guest g = new Guest();
-                        g.setName(name);
-                        g.setPhone(phone);
-                        g.setRoomNumber(roomNo);
+                    	String cleanStatus = status == null ? "" : status.trim().toLowerCase();
 
-                        return g;
+                    	if (cleanStatus.equals("checked-in")) {
+                            Guest g = new Guest();
+                            g.setName(name);
+                            g.setPhone(phone);
+                            g.setRoomNumber(roomNo);
+                            return g;
+                        } else {
+                            return null;
+                        }
                     }
                 }
             }
