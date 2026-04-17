@@ -35,7 +35,7 @@ public class GuestController {
         return ResponseEntity.ok(guestService.checkOutGuest(guest));
     }
 
-    @GetMapping("/guests")
+    @GetMapping(value = "/guests", produces = "application/json")
     public List<List<Object>> getGuests() {
         return guestService.getAllGuests();
     }
