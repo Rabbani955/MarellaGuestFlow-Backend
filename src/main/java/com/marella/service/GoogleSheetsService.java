@@ -23,25 +23,34 @@ public class GoogleSheetsService {
 
     private Sheets getSheetsService() throws Exception {
 
-    	String json = System.getenv("GOOGLE_CREDENTIALS_JSON");
+        InputStream in;
 
-    	if (json == null) {
-    	    throw new RuntimeException("❌ GOOGLE_CREDENTIALS_JSON not set");
-    	}
+        // 🌐 Check ENV (Render)
+        String json = System.getenv("GOOGLE_CREDENTIALS_JSON");
 
-    	// 🔥 THIS LINE IS CRITICAL
-    	json = json.replace("\\n", "\n");
+        if (json != null && !json.isEmpty()) {
+            // Fix newline issue
+            json = json.replace("\\n", "\n");
+            in = new java.io.ByteArrayInputStream(json.getBytes());
+            System.out.println("✅ Using ENV credentials (Render)");
+        } else {
+            // 💻 Local fallback
+            in = getClass().getResourceAsStream("/credentials.json");
+            System.out.println("✅ Using local credentials file");
+        }
 
-    	InputStream in = new java.io.ByteArrayInputStream(json.getBytes());
+        if (in == null) {
+            throw new RuntimeException("❌ credentials not found");
+        }
 
-    	GoogleCredential credential = GoogleCredential.fromStream(in)
-    	        .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
+        GoogleCredential credential = GoogleCredential.fromStream(in)
+                .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
 
         return new Sheets.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
                 JacksonFactory.getDefaultInstance(),
                 credential
-        ).setApplicationName(APPLICATION_NAME).build();
+        ).setApplicationName("MarellaGuestFlow").build();
     }
 
     // ✅ SAFE METHOD
